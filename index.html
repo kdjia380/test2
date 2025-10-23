@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Bubba's Gramama — 14-Game Hub</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#05040a;
+      --card:#0b0711;
+      --accent:#7fffd4;
+      --muted:#9aa0a6;
+      --glass: rgba(255,255,255,0.04);
+    }
+    html,body{height:100%;}
+    /* prevent double scrollbars: root fixed, only container scrolls */
+    html,body{margin:0;background:radial-gradient(ellipse at 10% 10%, #0b1020 0%, var(--bg) 35%), linear-gradient(180deg,#02030a 0%, #05040a 100%);color:#e6eef6;font-family:Orbitron,system-ui,Segoe UI,Roboto,Arial;}
+    .app{height:100vh;display:flex;flex-direction:column;}
+    header{padding:18px 24px;border-bottom:1px solid rgba(255,255,255,0.03);display:flex;align-items:center;gap:12px}
+    .logo{font-weight:700;font-size:20px;letter-spacing:1px;color:var(--accent)}
+    .subtitle{color:var(--muted);font-size:13px}
+    .content{flex:1;overflow:auto;padding:22px;}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:18px}
+
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);padding:12px;border-radius:14px;display:flex;flex-direction:column;gap:10px;box-shadow:0 6px 20px rgba(2,6,23,0.7);min-height:160px}
+    .thumb{height:110px;border-radius:10px;background:linear-gradient(120deg,#0f1724 0%, #071226 100%);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;font-size:18px}
+    .meta{display:flex;align-items:center;justify-content:space-between}
+    .title{font-size:15px}
+    .btn{background:linear-gradient(90deg, rgba(127,255,212,0.08), rgba(127,255,212,0.04));border:1px solid rgba(127,255,212,0.12);padding:8px 10px;border-radius:10px;cursor:pointer;font-weight:700}
+    .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,0.04)}
+
+    /* Modal / iframe */
+    .modal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.75));z-index:999}
+    .modal.open{display:flex}
+    .frame-wrap{width:95%;max-width:1200px;height:80vh;background:var(--card);border-radius:12px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(2,6,23,0.7)}
+    .frame-header{display:flex;align-items:center;gap:8px;padding:10px;border-bottom:1px solid rgba(255,255,255,0.02)}
+    .frame-title{flex:1;font-weight:700}
+    .frame-controls{display:flex;gap:8px}
+    .frame{flex:1;border:0;width:100%;height:100%}
+    .small{font-size:12px;color:var(--muted)}
+
+    footer{padding:12px 18px;border-top:1px solid rgba(255,255,255,0.02);display:flex;align-items:center;justify-content:space-between}
+
+    /* responsive touches */
+    @media (max-width:640px){.thumb{height:90px;font-size:14px}.frame-wrap{height:88vh}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">Bubba's Gramama</div>
+      <div class="subtitle">14-Game Hub — Spacey theme</div>
+      <div style="margin-left:auto;display:flex;gap:8px;align-items:center">
+        <button id="gridToggle" class="btn ghost">Toggle Grid</button>
+        <button id="openAll" class="btn ghost">Open First</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <section class="grid" id="gamesGrid">
+        <!-- 14 game cards injected by JS -->
+      </section>
+    </main>
+
+    <footer>
+      <div class="small">Tip: replace each game's <code>data-src</code> attribute in the HTML (or edit via admin button) with your actual game URL or embed.</div>
+      <div class="small">© Bubba's Gramama</div>
+    </footer>
+  </div>
+
+  <!-- Modal for playing games in an iframe -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="frame-wrap" role="dialog" aria-modal="true">
+      <div class="frame-header">
+        <div class="frame-title" id="frameTitle">Game</div>
+        <div class="frame-controls">
+          <button class="btn" id="btnFullscreen">Fullscreen</button>
+          <button class="btn ghost" id="btnClose">Close</button>
+        </div>
+      </div>
+      <iframe id="gameFrame" class="frame" sandbox="allow-scripts allow-same-origin allow-forms allow-pointer-lock"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // 14 sample placeholder games. Replace dataSrc with your real URLs.
+    const games = [
+      {id:1, title:'Galaxy Runner', dataSrc:'https://example.com/game1'},
+      {id:2, title:'Nebula Jump', dataSrc:'https://example.com/game2'},
+      {id:3, title:'Astro Miner', dataSrc:'https://example.com/game3'},
+      {id:4, title:'Orbit Racer', dataSrc:'https://example.com/game4'},
+      {id:5, title:'Star Defender', dataSrc:'https://example.com/game5'},
+      {id:6, title:'Cosmic Chef', dataSrc:'https://example.com/game6'},
+      {id:7, title:'Moonbase Builder', dataSrc:'https://example.com/game7'},
+      {id:8, title:'Photon Puzzle', dataSrc:'https://example.com/game8'},
+      {id:9, title:'Comet Clash', dataSrc:'https://example.com/game9'},
+      {id:10, title:'Zero-G Golf', dataSrc:'https://example.com/game10'},
+      {id:11, title:'Solar Sprint', dataSrc:'https://example.com/game11'},
+      {id:12, title:'Alien Arcade', dataSrc:'https://example.com/game12'},
+      {id:13, title:'Rocket Rescue', dataSrc:'https://example.com/game13'},
+      {id:14, title:'Blackhole Blitz', dataSrc:'https://example.com/game14'}
+    ];
+
+    const grid = document.getElementById('gamesGrid');
+    function createCard(g){
+      const el = document.createElement('article');
+      el.className='card';
+      el.innerHTML = `
+        <div class="thumb" aria-hidden="true">${escapeHtml(g.title)}</div>
+        <div class="meta">
+          <div class="title">${escapeHtml(g.title)}</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn" data-src="${escapeAttr(g.dataSrc)}" data-title="${escapeAttr(g.title)}">Play</button>
+            <button class="btn ghost" data-src="${escapeAttr(g.dataSrc)}" data-title="${escapeAttr(g.title)}">Open</button>
+          </div>
+        </div>
+      `;
+      return el;
+    }
+
+    // helpers to avoid accidental HTML injection when editing file
+    function escapeHtml(s){return String(s).replace(/[&<>\"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]});}
+    function escapeAttr(s){return escapeHtml(s)}
+
+    games.forEach(g=>grid.appendChild(createCard(g)));
+
+    // modal behavior
+    const modal = document.getElementById('modal');
+    const frame = document.getElementById('gameFrame');
+    const frameTitle = document.getElementById('frameTitle');
+    const btnClose = document.getElementById('btnClose');
+    const btnFullscreen = document.getElementById('btnFullscreen');
+
+    grid.addEventListener('click', (e)=>{
+      const btn = e.target.closest('button');
+      if(!btn) return;
+      const src = btn.getAttribute('data-src');
+      const title = btn.getAttribute('data-title') || 'Game';
+      if(!src) return;
+      openModal(src, title);
+    });
+
+    function openModal(src, title){
+      frameTitle.textContent = title;
+      // show a simple loading placeholder before setting src to avoid mixed content problems in some setups
+      frame.src = 'about:blank';
+      setTimeout(()=>{ frame.src = src; }, 50);
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden','false');
+      // lock scroll on body to avoid double scrollbars
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal(){
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden','true');
+      frame.src = 'about:blank';
+      document.body.style.overflow = '';
+    }
+
+    btnClose.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+
+    btnFullscreen.addEventListener('click', async ()=>{
+      const wrap = frame.closest('.frame-wrap');
+      if(document.fullscreenElement){
+        await document.exitFullscreen();
+      } else {
+        await wrap.requestFullscreen();
+      }
+    });
+
+    // extra small helpers
+    document.getElementById('gridToggle').addEventListener('click', ()=>{
+      grid.classList.toggle('compact');
+    });
+    document.getElementById('openAll').addEventListener('click', ()=>{
+      // open the first game's modal as a quick preview
+      const firstBtn = grid.querySelector('button[data-src]');
+      if(firstBtn){ firstBtn.click(); }
+    });
+
+    // Accessibility: close with Esc
+    window.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
+
+    // If you'd rather embed local .html game files, use relative paths like "games/game1/index.html"
+
+  </script>
+</body>
+</html>
